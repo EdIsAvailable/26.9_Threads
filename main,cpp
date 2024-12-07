@@ -1,0 +1,68 @@
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <numeric>
+#include <random>
+
+using namespace std;
+
+// Функция для вычисления суммы части массива
+long long calculate_partial_sum(const vector<long long>& arr, int start, int end) {
+  long long sum = 0;
+  for (int i = start; i < end; ++i) {
+    sum += arr[i];
+  }
+  return sum;
+}
+
+int main() {
+  long long n, m;
+
+  cout << "Введите размер массива N: ";
+  cin >> n;
+
+  cout << "Введите количество потоков M: ";
+  cin >> m;
+
+  if (n <= 0 || m <= 0 || m > n) {
+    cerr << "Некорректные входные данные." << endl;
+    return 1;
+  }
+
+  // Генерация случайных чисел
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_int_distribution<> distrib(1, 100); // Диапазон случайных чисел от 1 до 100
+
+  vector<long long> arr(n);
+  for (long long i = 0; i < n; ++i) {
+    arr[i] = distrib(gen);
+  }
+
+
+  // Разделение массива на части
+  int chunk_size = n / m;
+  vector<long long> partial_sums(m, 0);
+  vector<thread> threads;
+
+  // Создание и запуск потоков
+  for (int i = 0; i < m; ++i) {
+    int start = i * chunk_size;
+    int end = (i == m - 1) ? n : start + chunk_size; // Обработка остатка
+
+    threads.push_back(thread(calculate_partial_sum, ref(arr), start, end));
+  }
+
+  // Ожидание завершения потоков и сбор результатов
+  long long total_sum = 0;
+  for (int i = 0; i < m; ++i) {
+    threads[i].join();
+    partial_sums[i] = calculate_partial_sum(arr, i * chunk_size, (i == m - 1) ? n : (i + 1) * chunk_size);
+    total_sum += partial_sums[i];
+  }
+
+
+  cout << "Сумма элементов массива: " << total_sum << endl;
+
+  return 0;
+}
